@@ -1,0 +1,65 @@
+---
+title: "Activity Monitoring_Rcourse"
+output: html_document
+---
+
+```{r Loading & Preprocessing}
+activity <- read.csv("~/Downloads/activity.csv")
+str(activity)
+activity$Date <- strptime(as.character(activity$date),"%Y-%m-%d")
+class(activity$Date) 
+
+```
+
+
+````{r Mean total number of steps taken}
+totalSteps <- with(activity,tapply(steps,date,sum))
+hist(totalSteps)
+
+summary(totalSteps)
+
+````
+
+The mean and median total number of steps taken per day are:  
+- Mean: 10770  
+- Median: 10760
+
+````{r Average daily activity pattern}
+
+activity$step_average <- with(activity,tapply(steps,interval,mean,na.rm=TRUE))
+str(activity$step_average)
+with(activity,plot(interval,step_average,type="l"))
+
+activity$interval[max(activity$step_average)]
+
+````
+
+The interval with the maximum number of steps is at 1705
+
+````{r Mising values}
+
+activity$steps2 <- activity$steps
+activity$steps2[is.na(activity$steps2)] <- activity$step_average[is.na(activity$steps2)]
+str(activity)
+
+
+totalSteps2 <- with(activity,tapply(steps2,date,sum))
+hist(totalSteps2)
+summary(totalSteps2)
+
+````
+
+1. Total number of missing values: 2304
+2.  The column "steps2" is the same as steps but with the NA replaced with the means of that particular 5-minute interval
+3. The new mean & median is 10770. Compared to the first part of the assignment, the median is now the same as the mean.
+
+```{r Weekdays & weekends}
+
+activity$weekday <- weekdays(activity$Date)
+activity$weekday <- ifelse(activity$weekday %in% c("Saturday", "Sunday"), c("weekend"), c("weekday"))
+table(activity$weekday)
+
+library(ggplot2)
+
+activity$step_average2 <- with(activity,tapply(steps2,interval,mean,na.rm=TRUE))
+qplot(interval, step_average2, data=activity, facets= weekday~., geom="line")
